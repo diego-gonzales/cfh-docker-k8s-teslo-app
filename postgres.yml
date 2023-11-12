@@ -1,0 +1,41 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14.3
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-postgres-secrets
+                  key: DB_PASSWORD
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-postgres-service
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5435 # puede ser cualquiera (usualmente es el mismo; en este caso 5435), es utilizado para acceder desde el exterior
+      targetPort: 5432 # puerto interno del contenedor (siempre es el mismo, en este caso 5432)

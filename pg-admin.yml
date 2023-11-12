@@ -1,0 +1,51 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-admin-deployment
+  labels:
+    app: pg-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pg-admin
+  template:
+    metadata:
+      labels:
+        app: pg-admin
+    spec:
+      containers:
+        - name: pg-admin
+          image: dpage/pgadmin4:6.17
+          ports:
+            - containerPort: 80
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: my-pg-admin-secrets
+                  key: PG_ADMIN_EMAIL
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-pg-admin-secrets
+                  key: PG_ADMIN_PASSWORD
+            # - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+            #   value: 'false'
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-pg-admin-service
+spec:
+  # Ingress
+  type: NodePort # me permite acceder desde el exterior
+  selector:
+    app: pg-admin
+  ports:
+    - protocol: TCP
+      port: 80 # puede ser cualquiera (usualmente es el mismo, en este caso 80), es utilizado para acceder desde el exterior
+      targetPort: 80 # puerto interno del contenedor (siempre es el mismo; en este caso 80)
+      nodePort: 30200 # siempre tiene que estar en un rango de 30000 a 32767, es el puerto que se utiliza para acceder desde el exterior
