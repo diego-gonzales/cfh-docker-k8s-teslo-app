@@ -6,4 +6,4 @@ data:
   # property-like keys; each key maps to a simple value
   DB_NAME: postgres
   DB_HOST: my-postgres-service
-  DB_PORT: '5432'
+  DB_PORT: '5435'

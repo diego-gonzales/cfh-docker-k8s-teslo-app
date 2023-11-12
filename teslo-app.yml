@@ -1,0 +1,76 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teslo-app-deployment
+  labels:
+    app: teslo-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: teslo-app
+  template:
+    metadata:
+      labels:
+        app: teslo-app
+    spec:
+      containers:
+        - name: teslo-app
+          image: klerith/k8s-teslo-backend:1.1.0
+          ports:
+            - containerPort: 3000
+          # las variables de entorno se pueden definir aquí en el deployment o en el configmap (en este caso se definen aquí ya que solo se utilizan en este deployment)
+          env:
+            - name: APP_VERSION
+              value: '1.1.0'
+            - name: PORT
+              value: '3000'
+            - name: STAGE
+              value: 'prod'
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-postgres-config
+                  key: DB_NAME
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: my-postgres-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: my-postgres-config
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: my-postgres-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-postgres-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: my-teslo-app-secrets
+                  key: JWT_SEED
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-teslo-app-service
+spec:
+  # Ingress
+  type: NodePort # me permite acceder desde el exterior
+  selector:
+    app: teslo-app
+  ports:
+    - protocol: TCP
+      port: 3000 # puede ser cualquiera (usualmente es el mismo, en este caso 3000), es utilizado para acceder desde el exterior
+      targetPort: 3000 # puerto interno del contenedor (siempre es el mismo; en este caso 3000)
+      nodePort: 30300 # siempre tiene que estar en un rango de 30000 a 32767, es el puerto que se utiliza para acceder desde el exterior
